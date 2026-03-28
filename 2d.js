@@ -24,14 +24,16 @@ for (let rect of rects) {
     rect.r = rect.w + rect.h / 2
 }
 
-const pxLen = 2;
+const pxLen = 20;
 const half = pxLen / 2;
 
 const threshold = 0.9;
 
 const tolerance = 0.1;
 
-let useHalves = true;
+const isolevel = 0.9;
+
+let useHalves = false;
 
 const columns = Math.floor(canvas.width / pxLen);
 
@@ -41,7 +43,7 @@ const colours = ['red', 'orangered', 'orange', 'gold', 'yellow', 'lime', 'green'
 
 let values = []
 
-console.log(rows, 'rows x', columns, 'cols')
+console.log(rows, 'rows,', columns, 'cols')
 
 function lerp(a,b,t) {
     return a + (b-a) * t;
@@ -105,16 +107,16 @@ function distanceToBall(ball, x, y) {
 
 function getState(a, b, c, d) {
     let state = 0
-    if (Math.abs(a - threshold) < tolerance) {
+    if (a >= threshold) {
         state += 1
     }
-    if (Math.abs(b - threshold) < tolerance) {
+    if (b >= threshold) {
         state += 2
     }
-    if (Math.abs(c - threshold) < tolerance) {
+    if (c >= threshold) {
         state += 4
     }
-    if (Math.abs(d - threshold) < tolerance) {
+    if (d >= threshold) {
         state += 8
     }
     return state;
@@ -188,6 +190,15 @@ function doMarching() {
             const x = i * pxLen;
             const y = j * pxLen;
 
+            // ctx.beginPath()
+            // ctx.moveTo(x,y)
+            // ctx.lineTo(x + pxLen, y)
+            // ctx.moveTo(x, y)
+            // ctx.lineTo(x, y + pxLen)
+            // ctx.strokeStyle = 'orange'
+            // ctx.lineWidth = 5
+            // ctx.stroke()
+
             const topleft = values[i][j]
             const topright = values[i + 1][j]
             const bottomleft = values[i][j + 1]
@@ -198,13 +209,13 @@ function doMarching() {
             const br = {x: x + pxLen, y: y + pxLen}
             const bl = {x, y: y + pxLen}
 
-            const topT = topleft / (topleft + topright)
+            const topT = (isolevel - topleft) / (topright - topleft)
 
-            const leftT = topleft / (topleft + bottomleft)
+            const leftT = (isolevel - topleft) / (bottomleft - topleft)
 
-            const rightT = topright / (topright + bottomright)
+            const rightT = (isolevel - topright) / (bottomright - topright)
 
-            const bottomT = bottomleft / (bottomleft + bottomright)
+            const bottomT = (isolevel - bottomleft) / (bottomright - bottomleft)
 
             let a, b, c, d;
 
@@ -219,10 +230,20 @@ function doMarching() {
                 b = {x: x + pxLen, y: lerp(tr.y, br.y, rightT)}
                 c = {x: lerp(bl.x, br.x, bottomT), y: y + pxLen}
                 d = {x, y: lerp(tl.y, bl.y, leftT)}
+
+                // circle(a.x, a.y, 5, 'red')
+                // circle(b.x, b.y, 5, 'red')
+                // circle(c.x, c.y, 5, 'red')
+                // circle(d.x, d.y, 5, 'red')
+
+                // circle(x + half, y, 5, 'blue')
+                // circle(x + pxLen, y + half, 5, 'blue')
+                // circle(x + half, y+ pxLen, 5, 'blue')
+                // circle(x, y + half, 5, 'blue')
             }
 
             const state = getState(bottomleft, bottomright, topright, topleft)
-
+            if (state == 0) continue;
             /*
 
     O---a---O
@@ -230,7 +251,7 @@ function doMarching() {
     d       b
     |       |
     O---c---O
-                0b (tl, tr, br, bl)
+                0b(tl, tr, br, bl)
     */
 
             ctx.fillStyle = 'green' //`rgb(0, ${Math.round((topleft + topright + bottomleft + bottomright) / 4 * 255)}, 0)`
@@ -306,7 +327,7 @@ function doMarching() {
     }
 
     for (let ball of ballPositions) {
-        //circle(ball.x, ball.y, ball.r, '#00a5')
+        circle(ball.x, ball.y, ball.r, '#00a5')
     }
 
     ctx.restore()
@@ -330,8 +351,7 @@ function animate() {
     ballPositions[1].x = (Math.cos(angle2) + 1) * 250 + 100
     ballPositions[1].y = 300//(Math.sin(angle2) + 1) * 3 + 2
     calcValues()
-    //circle(a * pxLen, b * pxLen, 10, 'purple')
-
+    
     doMarching()
 }
 
