@@ -27,10 +27,6 @@ for (let rect of rects) {
 const pxLen = 20;
 const half = pxLen / 2;
 
-const threshold = 0.9;
-
-const tolerance = 0.1;
-
 const isolevel = 0.9;
 
 let useHalves = false;
@@ -107,16 +103,16 @@ function distanceToBall(ball, x, y) {
 
 function getState(a, b, c, d) {
     let state = 0
-    if (a >= threshold) {
+    if (a >= isolevel) {
         state += 1
     }
-    if (b >= threshold) {
+    if (b >= isolevel) {
         state += 2
     }
-    if (c >= threshold) {
+    if (c >= isolevel) {
         state += 4
     }
-    if (d >= threshold) {
+    if (d >= isolevel) {
         state += 8
     }
     return state;
