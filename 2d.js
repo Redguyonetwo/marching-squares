@@ -24,10 +24,10 @@ for (let rect of rects) {
     rect.r = rect.w + rect.h / 2
 }
 
-const pxLen = 20;
+const pxLen = 10;
 const half = pxLen / 2;
 
-const isolevel = 0.9;
+const isolevel = 2;
 
 let useHalves = false;
 
@@ -58,6 +58,11 @@ function calcValues() {
         for (let j = 0; j < rows; j++) {
             let val = 0
 
+            let x = i * pxLen
+            let y = j * pxLen
+
+            // Metaballs
+
             for (let ball of ballPositions) {
                 let dx = ball.x - i * pxLen
                 let dy = ball.y - j * pxLen
@@ -65,6 +70,13 @@ function calcValues() {
 
                 val += ball.r/len
             }
+
+            //Simple terrain
+
+            let f = 200 * Math.pow(Math.E, -1 * (x - 200) **2 / 10_000)
+            let g = 300 * Math.pow(Math.E, -1 * (x - 400) **2 / 10_000)
+
+            val += (y - (300 - Math.max(f, g, 0))) / 100 // need to flip y-axis from desmos, then translate up so that it's still positive
 
             //val /= ballPositions.length
 
@@ -74,6 +86,8 @@ function calcValues() {
 }
 
 calcValues()
+
+console.log(values)
 
 function circle(x, y, r, colour = 'red') {
     ctx.beginPath()
@@ -342,10 +356,10 @@ function animate() {
 
     //console.log(values[500/pxLen][300/pxLen])
 
-    ballPositions[0].x = 400//(Math.cos(angle) + 1) * 200 + 100
-    ballPositions[0].y = 300//(Math.sin(angle) + 1) * 100 + 100
+    ballPositions[0].x = (Math.cos(angle) + 1) * 300 + 100
+    ballPositions[0].y = (Math.sin(angle) + 1) * 100 + 100
     ballPositions[1].x = (Math.cos(angle2) + 1) * 250 + 100
-    ballPositions[1].y = 300//(Math.sin(angle2) + 1) * 3 + 2
+    ballPositions[1].y = 250//(Math.sin(angle2) + 1) * 3 + 2
     calcValues()
     
     doMarching()
