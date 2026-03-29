@@ -68,24 +68,32 @@ mesh.rotateY(Math.PI / 4)
 
 // -- Marching Cubes
 
-const numCubes = 200
+const numCubes = 50
 
 const size = numCubes + 1
 const sizeSq = size * size
 const half = size / 2
+const quarter = half / 2
 const res = 1
 
 const isolevel = 0.5
 
 const step = 0.05
 
+let ball = {x: half, y: half, z: half, r: 100}
+
+const mountains = [
+    {x: size * 0.1, z: size * 0.3, h: half, s: 1},
+    {x: size * 0.6, z: size * 0.4, h: quarter, s: 1}
+]
+
 let showNoise = true
 let values = new Array(sizeSq * size).fill(0)
 
-const cubeMat = new THREE.MeshStandardMaterial({color: 'forestgreen', side: THREE.DoubleSide})
+const cubeMat = new THREE.MeshStandardMaterial({color: '#150', side: THREE.DoubleSide})
 const geo = new THREE.BoxGeometry(1,1,1)
 
-const marchingGeo = new THREE.BufferGeometry()
+let marchingGeo = new THREE.BufferGeometry()
 
 const marchingMesh = new THREE.Mesh(
     marchingGeo,
@@ -101,41 +109,76 @@ function valuesIndex(i, j, k) {
     return i * sizeSq + j * size + k
 }
 
-let xoff = 0
+function calcValuesNoise() {
+    let xoff = 0
 
-for (let x = 0; x < size; x++) {
-    xoff += step;
-    for (let y = 0; y < size; y++) {
-        let zoff = 0
-        for (let z = 0; z < size; z++) {
-            zoff += step;
+    for (let x = 0; x < size; x++) {
+        xoff += step;
+        for (let y = 0; y < size; y++) {
+            let zoff = 0
+            for (let z = 0; z < size; z++) {
+                zoff += step;
 
-            let dx = x - half;
-            let dy = y - half;
-            let dz = z - half;
+                let dx = x - half;
+                let dy = y - half;
+                let dz = z - half;
 
-            let ground = noise.simplex2(xoff, zoff) + 1 //(dx*dx + dy*dy + dz*dz) / 100
+                let ground = noise.simplex2(xoff, zoff) + 1 //(dx*dx + dy*dy + dz*dz) / 100
 
-            ground *= 5
+                ground *= 5
 
-            let val = y - ground
+                let val = y - ground
 
-            let index = valuesIndex(x, y, z)
-            values[index] = val;
+                let index = valuesIndex(x, y, z)
+                values[index] = val;
+            }
+        }
+    }
+}
 
-            continue;
+function getMountainValue(x, y, z, m) {
+    let dx = x - m.x;
+    let dz = z - m.z;
 
-            const mesh = new THREE.Mesh(
-                geo,
-                cubeMat
-            )
+    let s = (-m.s) / numCubes
 
-            mesh.position.set(x, y, z)
+    let r2 = dx*dx + dz*dz;
 
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+    let mountain = m.h * Math.exp(s * r2);
+    return y - mountain
+}
 
-            scene.add(mesh)
+function calcValuesMountains() {
+    for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+            for (let z = 0; z < size; z++) {
+                let val = 0;
+                
+                for (let m of mountains) {
+                    val += getMountainValue(x, y, z, m)
+                }
+
+                let index = valuesIndex(x, y, z)
+                values[index] = val;
+            }
+        }
+    }
+}
+
+function calcValuesMetaball() {
+    for (let x = 0; x < size; x++) {
+        for (let y = 0; y < size; y++) {
+            for (let z = 0; z < size; z++) {
+                let dx = x - ball.x
+                let dy = y - ball.y
+                let dz = z - ball.z
+                let len = Math.hypot(dx*dx, dy*dy, dz*dz)
+
+                let val = ball.r - len
+
+                let index = valuesIndex(x, y, z)
+                values[index] = -val;
+            }
         }
     }
 }
@@ -215,11 +258,12 @@ function doMarching() {
         }
     }
 
-    marchingGeo.setFromPoints(verts)
-    marchingGeo.computeVertexNormals()
-}
+    marchingGeo.dispose()
 
-doMarching()
+    marchingGeo = new THREE.BufferGeometry().setFromPoints(verts)
+    marchingGeo.computeVertexNormals()
+    marchingMesh.geometry = marchingGeo
+}
 
 console.log(marchingGeo)
 
@@ -229,9 +273,21 @@ controls.target.set(half, 0, half)
 controls.update()
 renderer.render(scene, camera)
 
+let angle = 0
+const mult = 0.7
+
 function animate() {
     requestAnimationFrame(animate)
     renderer.render(scene, camera)
+
+    angle += 0.05
+
+    mountains[0].x = (Math.cos(angle) + 2) * quarter
+    mountains[0].z = (Math.sin(angle) + 2) * quarter
+    mountains[1].h = (Math.sin(angle * mult) + 2) * quarter
+
+    calcValuesMountains()
+    doMarching()
 }
 
 animate()
