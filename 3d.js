@@ -135,7 +135,7 @@ function getBinary(corners) {
     return index;
 }
 
-function marchCube(position, binary) {
+function marchCube(position, cubeCorners, binary) {
     if (binary == 0 || binary == 255) return; // Fully outside or fully inside - no surfaces
 
     const triangle = triangles[binary]
@@ -151,7 +151,16 @@ function marchCube(position, binary) {
 
         let p0 = edge[0].clone().add(position)
         let p1 = edge[1].clone().add(position)
-        let midpoint = p0.lerp(p1, 0.5)
+
+        let i0 = valuesIndex(p0.x, p0.y, p0.z)
+        let i1 = valuesIndex(p1.x, p1.y, p1.z)
+
+        let v0 = values[i0]
+        let v1 = values[i1]
+
+        let t = (isolevel - v0) / (v1 - v0)
+
+        let midpoint = p0.lerp(p1, t)
 
         points.push(midpoint)
 
@@ -180,7 +189,7 @@ function doMarching() {
 
                 let bits = getBinary(cubeCorners)
 
-                let points = marchCube(vec, bits)
+                let points = marchCube(vec, cubeCorners, bits)
 
                 if (points && points.length > 0) {
                     verts.push(...points)
