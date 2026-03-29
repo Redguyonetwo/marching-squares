@@ -3,8 +3,6 @@ import { OrbitControls } from './OrbitControls.js'
 
 import { corners, edges, triangles } from './lookupTables.js'
 
-console.log(corners)
-
 // -- Three.js setup --
 
 const canvas = document.getElementById('canvas')
@@ -23,14 +21,23 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 1)
 scene.add(ambientLight)
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 5) 
-dirLight.position.set(10, 30, 40)
+dirLight.position.set(50, 100, 50);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 200;
+dirLight.shadow.camera.left = 0;
+dirLight.shadow.camera.right = 200;
+dirLight.shadow.camera.top = 200;
+dirLight.shadow.camera.bottom = 0;
 scene.add(dirLight)
 
 const renderer = new THREE.WebGLRenderer({canvas, antialias: true})
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 
-const controls = new OrbitControls(camera, renderer.domElement)
+const controls = new OrbitControls(camera, canvas)
 
 const v = new THREE.Vector3()
 
@@ -61,7 +68,7 @@ mesh.rotateY(Math.PI / 4)
 
 // -- Marching Cubes
 
-const numCubes = 20
+const numCubes = 200
 
 const size = numCubes + 1
 const sizeSq = size * size
@@ -69,6 +76,8 @@ const half = size / 2
 const res = 1
 
 const isolevel = 0.5
+
+const step = 0.05
 
 let showNoise = true
 let values = new Array(sizeSq * size).fill(0)
@@ -83,6 +92,9 @@ const marchingMesh = new THREE.Mesh(
     cubeMat
 )
 
+marchingMesh.castShadow = true;
+marchingMesh.receiveShadow = true;
+
 scene.add(marchingMesh)
 
 function valuesIndex(i, j, k) {
@@ -90,7 +102,6 @@ function valuesIndex(i, j, k) {
 }
 
 let xoff = 0
-let step = 0.2
 
 for (let x = 0; x < size; x++) {
     xoff += step;
@@ -99,9 +110,15 @@ for (let x = 0; x < size; x++) {
         for (let z = 0; z < size; z++) {
             zoff += step;
 
+            let dx = x - half;
+            let dy = y - half;
+            let dz = z - half;
+
             let ground = noise.simplex2(xoff, zoff) + 1 //(dx*dx + dy*dy + dz*dz) / 100
 
-            let val = y - ground * 2
+            ground *= 5
+
+            let val = y - ground
 
             let index = valuesIndex(x, y, z)
             values[index] = val;
@@ -160,9 +177,9 @@ function marchCube(position, cubeCorners, binary) {
 
         let t = (isolevel - v0) / (v1 - v0)
 
-        let midpoint = p0.lerp(p1, t)
+        let p = p0.lerp(p1, t)
 
-        points.push(midpoint)
+        points.push(p)
 
         i++
     }
@@ -204,7 +221,9 @@ function doMarching() {
 
 doMarching()
 
-controls.target.set(half, half, half)
+console.log(marchingGeo)
+
+controls.target.set(half, 0, half)
 
 // -----
 controls.update()
