@@ -346,7 +346,7 @@ function doMarching() {
 let angle = 0;
 let angle2 = Math.random() * 2 * Math.PI;
 const speed = 0.01;
-const speed2 = 0.01;
+const speed2 = 0.014;
 
 function animate() {
     requestAnimationFrame(animate)
