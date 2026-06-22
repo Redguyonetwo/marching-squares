@@ -27,7 +27,9 @@ for (let rect of rects) {
 const pxLen = 10;
 const half = pxLen / 2;
 
-const isolevel = 2;
+const name = 'Projects';
+
+let isolevel = 1;
 
 let useHalves = false;
 
@@ -85,9 +87,39 @@ function calcValues() {
     }
 }
 
+const canvas2 = document.createElement('canvas')
+
+//document.body.appendChild(canvas2)
+canvas2.width = canvas.width;
+canvas2.height = canvas.height;
+
+const ctx2 = canvas2.getContext('2d')
+
+// ctx2.textAlign = 'center'
+// ctx2.textBaseline = 'middle'
+
+let minHalf = 500 * 0.3//Math.min(canvas2.width, canvas2.height) * 0.3;
+
+ctx2.font = `${minHalf}px Arial`
+
+ctx2.textAlign = 'center';
+ctx2.textBaseline = 'middle';
+ctx2.lineJoin = 'round'
+
+ctx2.shadowColor = 'black'
+ctx2.shadowBlur = 10;
+ctx2.shadowOffsetX = 0
+ctx2.shadowOffsetY = 0
+
+ctx2.letterSpacing = '20px'
+
+let pos = {x: 150, y: 290}
+
+let offset = {x: canvas2.width / 4}
+
 calcValues()
 
-console.log(values)
+//console.log(values)
 
 function circle(x, y, r, colour = 'red') {
     ctx.beginPath()
@@ -143,6 +175,11 @@ function lines(...points) {
 }
 
 function doMarching() {
+    if (window.isolevel && window.isolevel != isolevel) {
+        console.log('changing', window.isolevel)
+        isolevel = window.isolevel;
+    }
+
     ctx.fillStyle = 'black'
     ctx.fillRect(0,0,canvas.width, canvas.height)
 
@@ -348,9 +385,22 @@ let angle2 = Math.random() * 2 * Math.PI;
 const speed = 0.01;
 const speed2 = 0.014;
 
-function animate() {
+function animate(time) {
     requestAnimationFrame(animate)
     ctx.clearRect(0,0,canvas.width, canvas.height)
+    //ctx2.font = `${Math.round(minHalf + Math.sin(time * 0.006) * 10)}px Arial`;
+    ctx2.clearRect(0, 0, canvas2.width, canvas2.height)
+    ctx2.fillStyle = 'white'
+    ctx2.fillRect(0,0,canvas2.width, canvas2.height)
+    ctx2.fillStyle = 'black'
+    ctx2.strokeStyle = 'black'
+    ctx2.lineWidth = 1 //+ (Math.sin(time * 0.002) * 2);
+    ctx2.save()
+    ctx2.translate(canvas2.width / 2, canvas2.height / 2)
+    ctx2.rotate(Math.sin(time * 0.002) * 0.2)
+    ctx2.fillText(name, 0,0, canvas2.width)
+    ctx2.strokeText(name, 0,0, canvas2.width)
+    ctx2.restore()
     angle += speed
     angle2 += speed2;
 
